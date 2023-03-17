@@ -1,3 +1,4 @@
+
 /**
  * Interface containing the method that an AI needs to implement to play Othello.
  *  
