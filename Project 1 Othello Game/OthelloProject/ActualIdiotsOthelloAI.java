@@ -1,6 +1,6 @@
 
 import java.util.HashMap;
-public class OthelloAI implements IOthelloAI {
+public class ActualIdiotsOthelloAI implements IOthelloAI {
 
     int depthLimit = 5;
     PositionMap valueMap;
@@ -13,10 +13,13 @@ public class OthelloAI implements IOthelloAI {
         }
         int counter = 0;
         PosUtil bestMove = maxValue(s,counter, Double.MIN_VALUE, Double.MAX_VALUE, currentplayer);
-        System.out.println("Final move value: " + bestMove.getUtil());
         return bestMove.getPosition();
     }
 
+    /*Calculates the maxValue for the given gamestate, recursively calls minValue until depthlimit is reached.
+    Returns a PosUtil. our custom class which consists of a touple of a Position and the Utility.
+    The method takes the current player as a parameter to pass along to the eval function 
+    to correctly calculate the value of a move.*/
     public PosUtil maxValue (GameState s,int counter, double alpha, double beta, int player) {
         counter++;
         if (counter > depthLimit || s.isFinished()) {
@@ -24,13 +27,13 @@ public class OthelloAI implements IOthelloAI {
         }
         double value = Integer.MIN_VALUE;
         Position move = null;
+        /* Changes the current player so the AI doesn't get stuck, in case it has no legal moves available */
         if(s.legalMoves().isEmpty()){
             s.changePlayer();
             PosUtil plz = minValue( s, counter, alpha, beta, player);
             return plz;
         }
         for (Position a : s.legalMoves()) {
-            System.out.println(a);
             GameState tmpGS = new GameState(s.getBoard(), s.getPlayerInTurn());
             boolean stuff = tmpGS.insertToken(a);
             PosUtil tmp = minValue(tmpGS, counter, alpha, beta, player);
@@ -51,6 +54,10 @@ public class OthelloAI implements IOthelloAI {
         return new PosUtil(value,move);
     }
 
+    /*Calculates the minValue for the given gamestate, recursively calls maxValue until depthlimit is reached.
+    Returns a PosUtil. our custom class which consists of a touple of a Position and the Utility.
+    The method takes the current player as a parameter to pass along to the eval function 
+    to correctly calculate the value of a move.*/
     public PosUtil minValue (GameState s, int counter, double alpha, double beta, int player) {
         counter++;
         if (counter > depthLimit || s.isFinished()) {
@@ -64,7 +71,6 @@ public class OthelloAI implements IOthelloAI {
             return plz;
         }
         for (Position a : s.legalMoves()) {
-            System.out.println(a);
             GameState tmpGS = new GameState(s.getBoard(), s.getPlayerInTurn());
             boolean stuff = tmpGS.insertToken(a);
             PosUtil tmp = maxValue(tmpGS, counter, alpha, beta, player);
@@ -82,7 +88,14 @@ public class OthelloAI implements IOthelloAI {
         return new PosUtil (value, move);
     }
 
-    // Our Eval function
+    /* Our Eval function 
+     Our Eval function calculates the current value of a gamestate for the given player.
+     The calculation is done by a mix of looking at where the tokens are placed, and how many tokens each player has.
+     Every token placed in corners and on edges gives bonus value and every token placed near edges or corners gives minus value
+     Furthermore the value score increases for every token placed, and decreases for every token placed by the opponent.
+     For exact definition of which spots gives bonus/minus points look at the PositionMap.java file.
+    */
+
     public double Eval (GameState s, int player) {
 
         int[][] currentBoard = s.getBoard();
@@ -103,7 +116,6 @@ public class OthelloAI implements IOthelloAI {
         value += tokens[1]*0.03;
         value -= tokens[0]*0.03;
 
-        System.out.println("VALUE: " + value);
         } 
         else {
             for (Position p : valueMap.getValueMap().keySet()) {
@@ -118,46 +130,10 @@ public class OthelloAI implements IOthelloAI {
             var tokens = s.countTokens();
             value -= tokens[1]*0.03;
             value += tokens[0]*0.03; 
-            System.out.println("VALUE: " + value);
         }
         
         return value;
-        /*var tokens = s.countTokens();
-        int amountOfTokens = tokens[0] + tokens[1];  
-        double minBonus = 1;
-        double maxBonus = 1;
-        
-        int[][] checker = s.getBoard();
-
-        //HashMap<Position, Integer> positionValue = new HashMap<Position, Integer>();
-
-        //positionValue.put(new Position(0,0), 4);
-        double tempBonus = 0.0;
-
-        for (Position p : valueMap.getValueMap().keySet()) {
-            if (checker[p.col][p.row]==2){
-                    tempBonus+= valueMap.getValueMap().get(p);
-                }
-            }
-        maxBonus = maxBonus + tempBonus;
-
-        System.out.println("Bonus: " + maxBonus);
-    
-        if (s.isFinished()){
-            if (tokens[0] > tokens[1]) {
-                return -1;
-            }
-            else if (tokens[1] > tokens[0]) {
-                return 1;
-            }   
-            return 0;
-            }
-            else if (tokens[0] > tokens[1]) {
-                return -((tokens[0]/amountOfTokens) * minBonus);
-            }
-            else {
-                return (tokens[1]/amountOfTokens) * maxBonus;
-        } */
+      
     }
 }
 
