@@ -1,15 +1,15 @@
 
 
 public class PosUtil{
-	int util;
+	double util;
 	Position position;		
 		
-	public PosUtil(int util, Position position){
+	public PosUtil(double util, Position position){
 		this.util = util;
 		this.position = position;
 	}
 
-    public int getUtil (){
+    public double getUtil (){
         return this.util;
     }
 

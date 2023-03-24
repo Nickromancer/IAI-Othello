@@ -1,46 +1,48 @@
 
+import java.util.HashMap;
 public class OthelloAI implements IOthelloAI {
 
-    //int depthLimit = 5;
+    int depthLimit = 5;
+    PositionMap valueMap;
     
     
     public Position decideMove(GameState s) {
+        var currentplayer = s.getPlayerInTurn();    
+        if (valueMap == null){
+            valueMap = new PositionMap(s.getBoard().length);
+        }
         int counter = 0;
-        PosUtil bestMove = maxValue(s,counter, Integer.MIN_VALUE, Integer.MAX_VALUE);
-        System.out.println(bestMove.getPosition().toString());
+        PosUtil bestMove = maxValue(s,counter, Double.MIN_VALUE, Double.MAX_VALUE, currentplayer);
+        System.out.println("Final move value: " + bestMove.getUtil());
         return bestMove.getPosition();
     }
 
-    public PosUtil maxValue (GameState s,int counter, int alpha, int beta) {
+    public PosUtil maxValue (GameState s,int counter, double alpha, double beta, int player) {
         counter++;
-        System.out.println("maxValue: " + counter);
-        if (s.isFinished()) {
-           return new PosUtil(decideWinner(s), null);
+        if (counter > depthLimit || s.isFinished()) {
+           return new PosUtil(Eval(s, player), null);
         }
-        int value = Integer.MIN_VALUE;
+        double value = Integer.MIN_VALUE;
         Position move = null;
         if(s.legalMoves().isEmpty()){
-            System.out.println("no more moves");
             s.changePlayer();
-            PosUtil plz = minValue( s, counter, alpha, beta);
+            PosUtil plz = minValue( s, counter, alpha, beta, player);
             return plz;
         }
         for (Position a : s.legalMoves()) {
             System.out.println(a);
             GameState tmpGS = new GameState(s.getBoard(), s.getPlayerInTurn());
             boolean stuff = tmpGS.insertToken(a);
-            if (!stuff) {
-                System.out.println("shits wrong");
-            }
-            PosUtil tmp = minValue(tmpGS, counter, alpha, beta);
+            PosUtil tmp = minValue(tmpGS, counter, alpha, beta, player);
             
             if (tmp.getUtil() > value) {
                 value = tmp.getUtil();
                 move = a;
-                if (value > alpha){
-                    alpha = value;
-                }
-            }                    
+                
+            }
+            if (value > alpha){
+                alpha = value;
+            }                  
             if (value >= beta){
                 return new PosUtil(value, move);
             }
@@ -49,49 +51,113 @@ public class OthelloAI implements IOthelloAI {
         return new PosUtil(value,move);
     }
 
-    public PosUtil minValue (GameState s, int counter, int alpha, int beta) {
+    public PosUtil minValue (GameState s, int counter, double alpha, double beta, int player) {
         counter++;
-        System.out.println("minValue: " + counter);
-        if (s.isFinished()) {
-            return new PosUtil(decideWinner(s), null);
+        if (counter > depthLimit || s.isFinished()) {
+            return new PosUtil(Eval(s, player), null);
         }
-        int value = Integer.MAX_VALUE; 
+        double value = Integer.MAX_VALUE; 
         Position move = null;
-        
         if(s.legalMoves().isEmpty()){
-            System.out.println("no more moves");
-            PosUtil plz = maxValue( s, counter, alpha, beta);
+            s.changePlayer();
+            PosUtil plz = minValue( s, counter, alpha, beta, player);
             return plz;
         }
         for (Position a : s.legalMoves()) {
             System.out.println(a);
             GameState tmpGS = new GameState(s.getBoard(), s.getPlayerInTurn());
             boolean stuff = tmpGS.insertToken(a);
-            PosUtil tmp = maxValue(tmpGS, counter, alpha, beta);
+            PosUtil tmp = maxValue(tmpGS, counter, alpha, beta, player);
             if (tmp.getUtil() < value) {
                 value = tmp.getUtil();
                 move = a;
-                if (value < beta) {
-                    beta = value;
-                }
+            }
+            if (value < beta) {
+                beta = value;
+            }
             if (value <= alpha){
                 return new PosUtil(value, move);
             }
             }
-        }
         return new PosUtil (value, move);
-    } 
+    }
 
+    // Our Eval function
+    public double Eval (GameState s, int player) {
 
-    public int decideWinner (GameState s) {
-        var tokens = s.countTokens();
-        if (tokens[0] > tokens[1]) {
-            return -1;
+        int[][] currentBoard = s.getBoard();
+
+        double value = 0.0;
+
+        if (player == 2) {
+        for (Position p : valueMap.getValueMap().keySet()) {
+            if (currentBoard[p.col][p.row]==2){
+                    value+= valueMap.getValueMap().get(p);
+            }
+            else if (currentBoard[p.col][p.row]==1) {
+                value -= valueMap.getValueMap().get(p);
+            }
         }
-        else if (tokens[1] > tokens[0]) {
-            return 1;
-        }   
-        return 0;
+
+        var tokens = s.countTokens();
+        value += tokens[1]*0.03;
+        value -= tokens[0]*0.03;
+
+        System.out.println("VALUE: " + value);
+        } 
+        else {
+            for (Position p : valueMap.getValueMap().keySet()) {
+                if (currentBoard[p.col][p.row]==2){
+                        value-= valueMap.getValueMap().get(p);
+                }
+                else if (currentBoard[p.col][p.row]==1) {
+                    value += valueMap.getValueMap().get(p);
+                }
+            }
+    
+            var tokens = s.countTokens();
+            value -= tokens[1]*0.03;
+            value += tokens[0]*0.03; 
+            System.out.println("VALUE: " + value);
+        }
+        
+        return value;
+        /*var tokens = s.countTokens();
+        int amountOfTokens = tokens[0] + tokens[1];  
+        double minBonus = 1;
+        double maxBonus = 1;
+        
+        int[][] checker = s.getBoard();
+
+        //HashMap<Position, Integer> positionValue = new HashMap<Position, Integer>();
+
+        //positionValue.put(new Position(0,0), 4);
+        double tempBonus = 0.0;
+
+        for (Position p : valueMap.getValueMap().keySet()) {
+            if (checker[p.col][p.row]==2){
+                    tempBonus+= valueMap.getValueMap().get(p);
+                }
+            }
+        maxBonus = maxBonus + tempBonus;
+
+        System.out.println("Bonus: " + maxBonus);
+    
+        if (s.isFinished()){
+            if (tokens[0] > tokens[1]) {
+                return -1;
+            }
+            else if (tokens[1] > tokens[0]) {
+                return 1;
+            }   
+            return 0;
+            }
+            else if (tokens[0] > tokens[1]) {
+                return -((tokens[0]/amountOfTokens) * minBonus);
+            }
+            else {
+                return (tokens[1]/amountOfTokens) * maxBonus;
+        } */
     }
 }
 
