@@ -33,16 +33,22 @@ public class ActualIdiotsOthelloAI implements IOthelloAI {
             PosUtil plz = minValue( s, counter, alpha, beta, player);
             return plz;
         }
+        /*Checks all the possible moves for the current gamestate 
+        and finds out which move is the best to make */
         for (Position a : s.legalMoves()) {
+            //The gamestate that would be created if a given move was made
             GameState tmpGS = new GameState(s.getBoard(), s.getPlayerInTurn());
+             //Placeholder boolean, is simply there to makes sure tokens are placed on the board after the move is made
             boolean stuff = tmpGS.insertToken(a);
             PosUtil tmp = minValue(tmpGS, counter, alpha, beta, player);
             
+            //Updates the current value if better one is found
             if (tmp.getUtil() > value) {
                 value = tmp.getUtil();
                 move = a;
                 
             }
+            //Updates alpha/beta values for pruning
             if (value > alpha){
                 alpha = value;
             }                  
@@ -70,10 +76,12 @@ public class ActualIdiotsOthelloAI implements IOthelloAI {
             PosUtil plz = minValue( s, counter, alpha, beta, player);
             return plz;
         }
+        
         for (Position a : s.legalMoves()) {
             GameState tmpGS = new GameState(s.getBoard(), s.getPlayerInTurn());
             boolean stuff = tmpGS.insertToken(a);
             PosUtil tmp = maxValue(tmpGS, counter, alpha, beta, player);
+
             if (tmp.getUtil() < value) {
                 value = tmp.getUtil();
                 move = a;
